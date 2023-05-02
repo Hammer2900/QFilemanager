@@ -2,6 +2,10 @@
 
 made in Linux Mint 19
 
+### Compile
+
+nuitka3 --onefile --enable-plugin=pyqt5 --output-filename=QFileManager.bin --remove-output QFileManager.py
+
 ### Requirements:
 
 - python 3
