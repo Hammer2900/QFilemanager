@@ -66,16 +66,15 @@ class PlainTextEdit(QPlainTextEdit):
         self.addAction(self.copySelectedTextAction)
         self.pasteTextAction = QAction(QIcon.fromTheme("edit-paste"), "Copy", shortcut = "Shift+Ctrl+v", triggered = self.pasteText)
         self.addAction(self.pasteTextAction)
-        if not self.startDir == "":
+        if self.startDir != "":
             os.chdir(self.startDir)
-            self.name = (str(getpass.getuser()) + "@" + str(socket.gethostname()) 
-                                + ":" + str(os.getcwd()) + "$ ")
-            self.appendPlainText(self.name)
         else:
             os.chdir(os.path.dirname(sys.argv[0]))
-            self.name = (str(getpass.getuser()) + "@" + str(socket.gethostname()) 
-                                + ":" + str(os.getcwd()) + "$ ")
-            self.appendPlainText(self.name)
+
+        self.name = (
+            f"{str(getpass.getuser())}@{str(socket.gethostname())}:{os.getcwd()}$ "
+        )
+        self.appendPlainText(self.name)
 
     def copyText(self):
         self.copy()
@@ -121,8 +120,7 @@ class PlainTextEdit(QPlainTextEdit):
 
         if e.modifiers() == Qt.ControlModifier and e.key() == Qt.Key_C:
             self.process.kill()
-            self.name = (str(getpass.getuser()) + "@" + str(socket.gethostname()) 
-                                    + ":" + str(os.getcwd()) + "$ ")
+            self.name = f"{str(getpass.getuser())}@{str(socket.gethostname())}:{os.getcwd()}$ "
             self.appendPlainText("process cancelled")
             self.appendPlainText(self.name)
             self.textCursor().movePosition(QTextCursor.End)
@@ -166,13 +164,13 @@ class PlainTextEdit(QPlainTextEdit):
             except IndexError:
                 self.tracker = 0
 
-        if e.key() == Qt.Key_Backspace:
-            if cursor.positionInBlock() <= len(self.name):
-                return
+        if e.key() == Qt.Key_Backspace and cursor.positionInBlock() <= len(
+            self.name
+        ):
+            return
 
-        if e.key() == Qt.Key_Left:
-            if cursor.positionInBlock() <= len(self.name):
-                return
+        if e.key() == Qt.Key_Left and cursor.positionInBlock() <= len(self.name):
+            return
 
         if e.key() == Qt.Key_Delete:
             return
@@ -195,37 +193,32 @@ class PlainTextEdit(QPlainTextEdit):
 
     def run(self, command):
         """Executes a system command."""
-        if not command == "ls":
-            if self.process.state() != 2:
-                self.process.start(command)
-                print(self.process.exitStatus())
-                if not self.process.exitStatus() != 0:
-                    self.textCursor().movePosition(QTextCursor.End)
-                    self.name = (str(getpass.getuser()) + "@" + str(socket.gethostname()) 
-                                        + ":" + str(os.getcwd()) + "$ ")
-                    self.appendPlainText(self.name)
-        else:
+        if command == "ls":
             if self.process.state() != 2:
                 self.process.start(command)
                 self.process.waitForFinished()
+
+        elif self.process.state() != 2:
+            self.process.start(command)
+            print(self.process.exitStatus())
+            if self.process.exitStatus() == 0:
+                self.textCursor().movePosition(QTextCursor.End)
+                self.name = f"{str(getpass.getuser())}@{str(socket.gethostname())}:{os.getcwd()}$ "
+                self.appendPlainText(self.name)
 
     def handle(self, command):
 #        print("begin handle") 
         """Split a command into list so command echo hi would appear as ['echo', 'hi']"""
         real_command = command.replace(self.name, "")
 
-        if command == "True":
-            if self.process.state() == 2:
-                self.process.kill()
-                self.appendPlainText("Program execution killed, press enter")
+        if command == "True" and self.process.state() == 2:
+            self.process.kill()
+            self.appendPlainText("Program execution killed, press enter")
 
         if real_command.startswith("python"):
             pass
 
-        if real_command != "":
-            command_list = real_command.split()
-        else:
-            command_list = None
+        command_list = real_command.split() if real_command != "" else None
         """Now we start implementing some commands"""
         if real_command == "clear":
             self.clear()
@@ -239,8 +232,7 @@ class PlainTextEdit(QPlainTextEdit):
         elif command_list is not None and command_list[0] == "cd" and len(command_list) > 1:
             try:
                 os.chdir(" ".join(command_list[1:]))
-                self.name = (str(getpass.getuser()) + "@" + str(socket.gethostname()) 
-                                        + ":" + str(os.getcwd()) + "$ ")
+                self.name = f"{str(getpass.getuser())}@{str(socket.gethostname())}:{os.getcwd()}$ "
                 self.textCursor().movePosition(QTextCursor.End)
 
             except FileNotFoundError as E:
@@ -248,8 +240,7 @@ class PlainTextEdit(QPlainTextEdit):
 
         elif command_list is not None and len(command_list) == 1 and command_list[0] == "cd":
             os.chdir(str(Path.home()))
-            self.name = (str(getpass.getuser()) + "@" + str(socket.gethostname()) 
-                                    + ":" + str(os.getcwd()) + "$ ")
+            self.name = f"{str(getpass.getuser())}@{str(socket.gethostname())}:{os.getcwd()}$ "
             self.textCursor().movePosition(QTextCursor.End)
 
         elif self.process.state() == 2:
@@ -258,8 +249,6 @@ class PlainTextEdit(QPlainTextEdit):
 
         elif command == self.name + real_command:
             self.run(real_command)
-        else:
-            pass
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

@@ -166,11 +166,11 @@ class MyWindow(QMainWindow):
         if self.viewer.verticalHeader().isVisible() == False:
             self.viewer.verticalHeader().setVisible(True)
             icon = QIcon.fromTheme("go-last-symbolic")
-            self.actionHide.setIcon(icon)
         else:
             self.viewer.verticalHeader().setVisible(False)
             icon = QIcon.fromTheme("go-first-symbolic")
-            self.actionHide.setIcon(icon)
+
+        self.actionHide.setIcon(icon)
 
 #    def fileOpen(self):
 #        tablelist = []
@@ -231,7 +231,7 @@ class MyWindow(QMainWindow):
 #        self.fileOpenStartup(sqlfile)
 #
     def fileSaveTab(self):
-        if not self.model.rowCount() == 0:
+        if self.model.rowCount() != 0:
             self.msg("exporting Table")
             conn=sqlite3.connect(self.dbfile)
             c=conn.cursor()
@@ -260,7 +260,7 @@ class MyWindow(QMainWindow):
             self.setTableName()
 
     def fileSaveComma(self):
-        if not self.model.rowCount() == 0:
+        if self.model.rowCount() != 0:
             self.msg("exporting Table")
             conn=sqlite3.connect(self.dbfile)
             c=conn.cursor()
@@ -282,7 +282,7 @@ class MyWindow(QMainWindow):
         self.model.setData(item, self.editor.text())
 
     def setTableName(self):
-        if not self.pop.currentText() == "choose Table ...":
+        if self.pop.currentText() != "choose Table ...":
             self.tablename = self.pop.currentText()
             print("DB is:", self.dbfile)
             self.msg("initialize")

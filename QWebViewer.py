@@ -32,7 +32,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def load_url(self, path):
         print("loading HTML")
         self.url = path
-        self.webView.load(QtCore.QUrl("file://" + self.url))
+        self.webView.load(QtCore.QUrl(f"file://{self.url}"))
 
 
 #if __name__ == '__main__':

@@ -32,7 +32,7 @@ from send2trash import send2trash
 
 home = QStandardPaths.standardLocations(QStandardPaths.HomeLocation)[0]
 username = home.rpartition("/")[-1]
-media = "/media/" + username
+media = f"/media/{username}"
 
 music = QStandardPaths.standardLocations(QStandardPaths.MusicLocation)[0]
 videos = QStandardPaths.standardLocations(QStandardPaths.MoviesLocation)[0]
@@ -90,7 +90,7 @@ class helpWindow(QMainWindow):
 
     def aboutApp(self):
         sysinfo = QSysInfo()
-        myMachine = "currentCPU Architecture: " + sysinfo.currentCpuArchitecture() + "<br>" + sysinfo.prettyProductName() + "<br>" + sysinfo.kernelType() + " " + sysinfo.kernelVersion()
+        myMachine = f"currentCPU Architecture: {sysinfo.currentCpuArchitecture()}<br>{sysinfo.prettyProductName()}<br>{sysinfo.kernelType()} {sysinfo.kernelVersion()}"
         title = "about QFileManager"
         message = """
                     <span style='color: #3465a4; font-size: 20pt;font-weight: bold;text-align: center;'
@@ -278,7 +278,7 @@ class myWindow(QMainWindow):
         ### media folder ###
         usb = QDir(media).entryList(["*"], QDir.Dirs | QDir.NoDot | QDir.NoDotDot)
         for disk in usb:
-            self.cmb.addItem(media + "/" + disk)
+            self.cmb.addItem(f"{media}/{disk}")
 
         self.cmb.addItem(home)
         self.cmb.addItem(documents)
@@ -289,19 +289,19 @@ class myWindow(QMainWindow):
         self.cmb.addItem(apps)
         self.cmb.addItem(appdata)
         self.cmb.addItem(config)
-        self.cmb.addItem(home + "/.local")
+        self.cmb.addItem(f"{home}/.local")
         self.cmb.addItem("/bin")
         self.cmb.addItem(temp)
-        #######################################################
-        combolist = []
-        for row in range(self.cmb.count()):
-            combolist.append(self.cmb.itemText(row).rpartition("/")[2])
+        combolist = [
+            self.cmb.itemText(row).rpartition("/")[2]
+            for row in range(self.cmb.count())
+        ]
         #######################################################
         currentDir = QDir(home)
         disks = currentDir.entryList(["*"], QDir.Dirs | QDir.NoDot | QDir.NoDotDot)
         for disk in disks:
-            if not disk in combolist:
-                self.cmb.addItem(QDir.homePath() + "/" + disk)
+            if disk not in combolist:
+                self.cmb.addItem(f"{QDir.homePath()}/{disk}")
 
     def setFolder(self):
         path = self.cmb.currentText()
@@ -318,7 +318,7 @@ class myWindow(QMainWindow):
             name = index.sibling(index.row(),0).data()
             size = index.sibling(index.row(),1).data()
             type = index.sibling(index.row(),2).data()
-            self.statusBar().showMessage("%s *** %s *** %s" %(name, type, size), 0)
+            self.statusBar().showMessage(f"{name} *** {type} *** {size}", 0)
         elif self.treeview.hasFocus():
             self.listview.clearSelection()
             index = self.treeview.selectionModel().currentIndex()
@@ -326,7 +326,7 @@ class myWindow(QMainWindow):
             name = index.sibling(index.row(),0).data()
             size = index.sibling(index.row(),1).data()
             type = index.sibling(index.row(),2).data()
-            self.statusBar().showMessage("%s *** %s *** %s" %(name, type, size), 0)
+            self.statusBar().showMessage(f"{name} *** {type} *** {size}", 0)
         self.setWindowTitle(path)
 
     def getRowCount(self):
@@ -335,12 +335,12 @@ class myWindow(QMainWindow):
             index = self.listview.selectionModel().currentIndex()
             path = QDir(self.fileModel.fileInfo(index).absoluteFilePath())
             count = len(path.entryList(QDir.Files))
-            self.statusBar().showMessage("%s %s" % (count, "Files"), 0)
+            self.statusBar().showMessage(f"{count} Files", 0)
         elif self.treeview.hasFocus():
             index = self.treeview.selectionModel().currentIndex()
             path = QDir(self.dirModel.fileInfo(index).absoluteFilePath())
             count = len(path.entryList(QDir.Files))
-            self.statusBar().showMessage("%s %s" % (count, "Files"), 0)
+            self.statusBar().showMessage(f"{count} Files", 0)
         return count
 
     def closeEvent(self, e):
@@ -360,12 +360,8 @@ class myWindow(QMainWindow):
         else:
             self.resize(800, 600)
         if self.settings.contains("hiddenEnabled"):
-            if self.settings.value("hiddenEnabled") == "false":
-                self.hiddenEnabled = False
-                self.enableHidden()
-            else:
-                self.hiddenEnabled = True
-                self.enableHidden()
+            self.hiddenEnabled = self.settings.value("hiddenEnabled") != "false"
+            self.enableHidden()
 
     def writeSettings(self):
         self.settings.setValue("pos", self.pos())
@@ -385,12 +381,8 @@ class myWindow(QMainWindow):
             print("set hidden files to true")
 
     def toggleHidden(self):
-        if self.hiddenEnabled == False:
-            self.hiddenEnabled = True
-            self.enableHidden()
-        else:
-            self.hiddenEnabled = False
-            self.enableHidden()
+        self.hiddenEnabled = self.hiddenEnabled == False
+        self.enableHidden()
 
     def openOnOtherSide(self):
         if self.listview.hasFocus():
@@ -619,12 +611,16 @@ class myWindow(QMainWindow):
                 self.db_win.fileOpenStartup(path)
 
     def checkIsApplication(self, path):
-        st = subprocess.check_output("file  --mime-type '" + path + "'", stderr=subprocess.STDOUT, universal_newlines=True, shell=True)
-        if "application/x-executable" in st:
-            print(path, "is an application")
-            return True
-        else:
+        st = subprocess.check_output(
+            f"file  --mime-type '{path}'",
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
+            shell=True,
+        )
+        if "application/x-executable" not in st:
             return False
+        print(path, "is an application")
+        return True
 
     def makeExecutable(self):
         if self.listview.hasFocus():
@@ -654,8 +650,7 @@ class myWindow(QMainWindow):
         if self.terminal.isVisible():
             os.chdir(path)
             self.terminal.shellWin.startDir = path
-            self.terminal.shellWin.name = (str(getpass.getuser()) + "@" + str(socket.gethostname()) 
-                                    + ":" + str(path) + "$ ")
+            self.terminal.shellWin.name = f"{str(getpass.getuser())}@{str(socket.gethostname())}:{str(path)}$ "
             self.terminal.shellWin.appendPlainText(self.terminal.shellWin.name)
 
     def showInTerminal2(self):
@@ -665,8 +660,7 @@ class myWindow(QMainWindow):
         if self.terminal.isVisible():
             os.chdir(path)
             self.terminal.shellWin.startDir = path
-            self.terminal.shellWin.name = (str(getpass.getuser()) + "@" + str(socket.gethostname()) 
-                                    + ":" + str(path) + "$ ")
+            self.terminal.shellWin.name = f"{str(getpass.getuser())}@{str(socket.gethostname())}:{str(path)}$ "
             self.terminal.shellWin.appendPlainText(self.terminal.shellWin.name)
 
     def startInTerminal(self):
@@ -682,10 +676,9 @@ class myWindow(QMainWindow):
                     if self.terminal.isVisible():
                         os.chdir(folderpath)
                         self.terminal.shellWin.startDir = folderpath
-                        self.terminal.shellWin.name = (str(getpass.getuser()) + "@" + str(socket.gethostname()) 
-                                                + ":" + str(folderpath) + "$ ")
+                        self.terminal.shellWin.name = f"{str(getpass.getuser())}@{str(socket.gethostname())}:{str(folderpath)}$ "
                         self.terminal.shellWin.appendPlainText(self.terminal.shellWin.name)
-                        self.terminal.shellWin.insertPlainText("./%s" % (filename))
+                        self.terminal.shellWin.insertPlainText(f"./{filename}")
                         self.terminal.shellWin.run(path)
                 else:
                     self.terminal = QTerminalFolder.MainWindow()
@@ -693,8 +686,7 @@ class myWindow(QMainWindow):
                     if self.terminal.isVisible():
                         os.chdir(path)
                         self.terminal.shellWin.startDir = path
-                        self.terminal.shellWin.name = (str(getpass.getuser()) + "@" + str(socket.gethostname()) 
-                                                + ":" + str(path) + "$ ")
+                        self.terminal.shellWin.name = f"{str(getpass.getuser())}@{str(socket.gethostname())}:{str(path)}$ "
                         self.terminal.shellWin.appendPlainText(self.terminal.shellWin.name)
         elif self.treeview.hasFocus():
             if self.treeview.selectionModel().hasSelection():
@@ -708,10 +700,9 @@ class myWindow(QMainWindow):
                     if self.terminal.isVisible():
                         os.chdir(folderpath)
                         self.terminal.shellWin.startDir = folderpath
-                        self.terminal.shellWin.name = (str(getpass.getuser()) + "@" + str(socket.gethostname()) 
-                                                + ":" + str(folderpath) + "$ ")
+                        self.terminal.shellWin.name = f"{str(getpass.getuser())}@{str(socket.gethostname())}:{str(folderpath)}$ "
                         self.terminal.shellWin.appendPlainText(self.terminal.shellWin.name)
-                        self.terminal.shellWin.insertPlainText("./%s" % (filename))
+                        self.terminal.shellWin.insertPlainText(f"./{filename}")
                         self.terminal.shellWin.run(path)
                 else:
                     self.terminal = QTerminalFolder.MainWindow()
@@ -719,8 +710,7 @@ class myWindow(QMainWindow):
                     if self.terminal.isVisible():
                         os.chdir(path)
                         self.terminal.shellWin.startDir = path
-                        self.terminal.shellWin.name = (str(getpass.getuser()) + "@" + str(socket.gethostname()) 
-                                                + ":" + str(path) + "$ ")
+                        self.terminal.shellWin.name = f"{str(getpass.getuser())}@{str(socket.gethostname())}:{str(path)}$ "
                         self.terminal.shellWin.appendPlainText(self.terminal.shellWin.name)
 
     def createZipFromFolder(self):
@@ -731,7 +721,12 @@ class myWindow(QMainWindow):
                 fname = self.fileModel.fileInfo(index).fileName()
                 print("folder to zip:", path)
                 self.copyFile()
-                target, _ = QFileDialog.getSaveFileName(self, "Save as... (do not add .zip)", path + "/" + fname,"zip files (*.zip)")
+                target, _ = QFileDialog.getSaveFileName(
+                    self,
+                    "Save as... (do not add .zip)",
+                    f"{path}/{fname}",
+                    "zip files (*.zip)",
+                )
                 if (target != ""):
                     shutil.make_archive(target, 'zip', path)
         elif self.treeview.hasFocus():
@@ -741,7 +736,12 @@ class myWindow(QMainWindow):
                 fname = self.fileModel.fileInfo(index).fileName()
                 print("folder to zip:", path)
                 self.copyFile()
-                target, _ = QFileDialog.getSaveFileName(self, "Save as... (do not add .zip)", path + "/" + fname,"zip files (*.zip)")
+                target, _ = QFileDialog.getSaveFileName(
+                    self,
+                    "Save as... (do not add .zip)",
+                    f"{path}/{fname}",
+                    "zip files (*.zip)",
+                )
                 if (target != ""):
                     shutil.make_archive(target, 'zip', path)
 
@@ -753,7 +753,9 @@ class myWindow(QMainWindow):
                 fname = self.fileModel.fileInfo(index).fileName()
                 print("folder to zip:", path)
                 self.copyFile()
-                target, _ = QFileDialog.getSaveFileName(self, "Save as...", path + "/" + "archive.zip","zip files (*.zip)")
+                target, _ = QFileDialog.getSaveFileName(
+                    self, "Save as...", f"{path}/archive.zip", "zip files (*.zip)"
+                )
                 if (target != ""):
                     zipText = ""
                     with ZipFile(target, 'w') as myzip:
@@ -767,7 +769,9 @@ class myWindow(QMainWindow):
                 fname = self.dirModel.fileInfo(index).fileName()
                 print("folder to zip:", path)
                 self.copyFile()
-                target, _ = QFileDialog.getSaveFileName(self, "Save as...", path + "/" + "archive.zip","zip files (*.zip)")
+                target, _ = QFileDialog.getSaveFileName(
+                    self, "Save as...", f"{path}/archive.zip", "zip files (*.zip)"
+                )
                 if (target != ""):
                     zipText = ""
                     with ZipFile(target, 'w') as myzip:
@@ -781,7 +785,9 @@ class myWindow(QMainWindow):
                 file_index = self.listview.selectionModel().currentIndex()
                 file_path = self.fileModel.fileInfo(file_index).filePath()
                 ext = os.path.splitext(file_path)
-                folder_path = self.windowTitle() + "/" + os.path.basename(file_path).replace(ext[1], "")
+                folder_path = f"{self.windowTitle()}/" + os.path.basename(
+                    file_path
+                ).replace(ext[1], "")
                 print(file_path, folder_path)
                 with ZipFile(file_path, 'r') as zipObj:
                    zipObj.extractall(folder_path)
@@ -790,7 +796,9 @@ class myWindow(QMainWindow):
                 file_index = self.treeview.selectionModel().currentIndex()
                 file_path = self.dirModel.fileInfo(file_index).filePath()
                 ext = os.path.splitext(file_path)
-                folder_path = self.windowTitle() + "/" + os.path.basename(file_path).replace(ext[1], "")
+                folder_path = f"{self.windowTitle()}/" + os.path.basename(
+                    file_path
+                ).replace(ext[1], "")
                 with ZipFile(file_path, 'r') as zipObj:
                    zipObj.extractall(folder_path)
 
@@ -800,19 +808,27 @@ class myWindow(QMainWindow):
                 file_index = self.listview.selectionModel().currentIndex()
                 file_path = self.fileModel.fileInfo(file_index).filePath()
                 ext = os.path.splitext(file_path)
-                dirpath = QFileDialog.getExistingDirectory(self, "selectFolder", QDir.homePath(),  QFileDialog.ShowDirsOnly)
-                if dirpath:
+                if dirpath := QFileDialog.getExistingDirectory(
+                    self, "selectFolder", QDir.homePath(), QFileDialog.ShowDirsOnly
+                ):
                     with ZipFile(file_path, 'r') as zipObj:
-                       zipObj.extractall(dirpath + "/" + os.path.basename(file_path).replace(ext[1], ""))
+                        zipObj.extractall(
+                            f"{dirpath}/"
+                            + os.path.basename(file_path).replace(ext[1], "")
+                        )
         elif self.treeview.hasFocus():
             if self.treeview.selectionModel().hasSelection():
                 file_index = self.treeview.selectionModel().currentIndex()
                 file_path = self.dirModel.fileInfo(file_index).filePath()
                 ext = os.path.splitext(file_path)
-                dirpath = QFileDialog.getExistingDirectory(self, "selectFolder", QDir.homePath(),  QFileDialog.ShowDirsOnly)
-                if dirpath:
+                if dirpath := QFileDialog.getExistingDirectory(
+                    self, "selectFolder", QDir.homePath(), QFileDialog.ShowDirsOnly
+                ):
                     with ZipFile(file_path, 'r') as zipObj:
-                       zipObj.extractall(dirpath + "/" + os.path.basename(file_path).replace(ext[1], ""))
+                        zipObj.extractall(
+                            f"{dirpath}/"
+                            + os.path.basename(file_path).replace(ext[1], "")
+                        )
 
     def findFiles(self):
         path = self.windowTitle()
@@ -820,7 +836,7 @@ class myWindow(QMainWindow):
         self.w = findFilesWindow.ListBox()
         self.w.show()
         self.w.folderEdit.setText(path)
-        self.w.findEdit.setText("*" + self.findfield.text() + "*")
+        self.w.findEdit.setText(f"*{self.findfield.text()}*")
         if self.findfield.text() != "":
             self.w.findMyFiles()
         else:
@@ -839,34 +855,33 @@ class myWindow(QMainWindow):
                 index = self.listview.selectionModel().currentIndex()
                 path = self.fileModel.fileInfo(index).filePath()
                 ext = self.fileModel.fileInfo(index).suffix()
-                newpath = path.replace("." + ext, ".mp3")
-                self.statusBar().showMessage("%s '%s'" % ("converting:", path))
+                newpath = path.replace(f".{ext}", ".mp3")
+                self.statusBar().showMessage(f"converting: '{path}'")
                 self.process.startDetached("ffmpeg", ["-i", path, newpath])
-                print("%s '%s'" % ("converting", path))
+                print(f"converting '{path}'")
         elif self.treeview.hasFocus():
             if self.treeview.selectionModel().hasSelection():
                 index = self.treeview.selectionModel().currentIndex()
                 path = self.dirModel.fileInfo(index).filePath()
                 ext = self.dirModel.fileInfo(index).suffix()
-                newpath = path.replace("." + ext, ".mp3")
+                newpath = path.replace(f".{ext}", ".mp3")
                 print(ext)
-                self.statusBar().showMessage("%s '%s'" % ("converting:", path))
+                self.statusBar().showMessage(f"converting: '{path}'")
                 self.process.startDetached("ffmpeg", ["-i", path, newpath])
-                print("%s '%s'" % ("converting", path))
+                print(f"converting '{path}'")
 
     def makePlaylist(self):
         dirname = os.path.basename(self.windowTitle())
-        path = os.path.join(self.windowTitle(), dirname + ".m3u")
+        path = os.path.join(self.windowTitle(), f"{dirname}.m3u")
         print(path)
         pl = QFile(path)
         pl.open(QIODevice.ReadWrite | QIODevice.Truncate)
-        mp3List = []
-        
-        for name in os.listdir(self.windowTitle()):
-            if os.path.isfile(os.path.join(self.windowTitle(), name)):
-                if ".mp3" in name:
-                    mp3List.append(self.windowTitle() + "/" + name)
-        
+        mp3List = [
+            f"{self.windowTitle()}/{name}"
+            for name in os.listdir(self.windowTitle())
+            if os.path.isfile(os.path.join(self.windowTitle(), name))
+            and ".mp3" in name
+        ]
         mp3List.sort(key=str.lower)
         print(path)
 
@@ -885,8 +900,7 @@ class myWindow(QMainWindow):
         self.w.show()
 
     def getFolderSize(self, path):
-        size = sum(os.path.getsize(f) for f in os.listdir(folder) if os.path.isfile(f))
-        return size
+        return sum(os.path.getsize(f) for f in os.listdir(folder) if os.path.isfile(f))
 
     def openFile(self):
         if self.listview.hasFocus():
@@ -895,7 +909,7 @@ class myWindow(QMainWindow):
                 path = self.fileModel.fileInfo(index).absoluteFilePath()
                 self.copyFile()
                 for files in self.copyList:
-                    print("%s '%s'" % ("open file", files))
+                    print(f"open file '{files}'")
                     if self.checkIsApplication(path) == True:
                         self.process.startDetached(files)
                     else:
@@ -906,7 +920,7 @@ class myWindow(QMainWindow):
                 path = self.dirModel.fileInfo(index).absoluteFilePath()
                 self.copyFile()
                 for files in self.copyList:
-                    print("%s '%s'" % ("open file", files))
+                    print(f"open file '{files}'")
                     if self.checkIsApplication(path) == True:
                         self.process.startDetached(files)
                     else:
@@ -949,36 +963,36 @@ class myWindow(QMainWindow):
             if self.listview.selectionModel().hasSelection():
                 index = self.listview.selectionModel().currentIndex()
                 path = self.fileModel.fileInfo(index).filePath()
-                self.statusBar().showMessage("%s '%s'" % ("file:", path))
+                self.statusBar().showMessage(f"file: '{path}'")
                 self. player = Qt5Player.VideoPlayer('')
                 self.player.show()
                 self.player.loadFilm(path)
-                print("%s '%s'" % ("playing", path))
+                print(f"playing '{path}'")
         elif self.treeview.hasFocus():
             if self.treeview.selectionModel().hasSelection():
                 index = self.treeview.selectionModel().currentIndex()
                 path = self.dirModel.fileInfo(index).filePath()
-                self.statusBar().showMessage("%s '%s'" % ("file:", path))
+                self.statusBar().showMessage(f"file: '{path}'")
                 self. player = Qt5Player.VideoPlayer('')
                 self.player.show()
                 self.player.loadFilm(path)
-                print("%s '%s'" % ("playing", path))
+                print(f"playing '{path}'")
 
     def playMedia(self):
         if self.listview.hasFocus():
             if self.listview.selectionModel().hasSelection():
                 index = self.listview.selectionModel().currentIndex()
                 path = self.fileModel.fileInfo(index).filePath()
-                self.statusBar().showMessage("%s '%s'" % ("file:", path))
+                self.statusBar().showMessage(f"file: '{path}'")
                 self.process.startDetached("cvlc", [path])
-                print("%s '%s'" % ("playing with vlc:", path))
+                print(f"playing with vlc: '{path}'")
         elif self.treeview.hasFocus():
             if self.treeview.selectionModel().hasSelection():
                 index = self.treeview.selectionModel().currentIndex()
                 path = self.dirModel.fileInfo(index).filePath()
-                self.statusBar().showMessage("%s '%s'" % ("file:", path))
+                self.statusBar().showMessage(f"file: '{path}'")
                 self.process.startDetached("cvlc", [path])
-                print("%s '%s'" % ("playing with vlc:", path))
+                print(f"playing with vlc: '{path}'")
 
     def showURL(self):
         if self.listview.hasFocus():
@@ -1000,25 +1014,23 @@ class myWindow(QMainWindow):
         if self.listview.hasFocus():
             index = self.listview.selectionModel().currentIndex()
             path = self.fileModel.fileInfo(index).absoluteFilePath()
-            if not self.fileModel.fileInfo(index).isDir():
-                if self.checkIsApplication(path) == True:
-                    self.process.startDetached(path)
-                else:
-                    QDesktopServices.openUrl(QUrl.fromLocalFile(path))
-            else:
+            if self.fileModel.fileInfo(index).isDir():
                 self.listview.setRootIndex(self.fileModel.setRootPath(path))
                 self.setWindowTitle(path)
+            elif self.checkIsApplication(path) == True:
+                self.process.startDetached(path)
+            else:
+                QDesktopServices.openUrl(QUrl.fromLocalFile(path))
         elif self.treeview.hasFocus():
             index = self.treeview.selectionModel().currentIndex()
             path = self.dirModel.fileInfo(index).absoluteFilePath()
-            if not self.dirModel.fileInfo(index).isDir():
-                if self.checkIsApplication(path) == True:
-                    self.process.startDetached(path)
-                else:
-                    QDesktopServices.openUrl(QUrl.fromLocalFile(path))
-            else:
+            if self.dirModel.fileInfo(index).isDir():
                 self.treeview.setRootIndex(self.dirModel.setRootPath(path))
                 self.setWindowTitle(path)
+            elif self.checkIsApplication(path) == True:
+                self.process.startDetached(path)
+            else:
+                QDesktopServices.openUrl(QUrl.fromLocalFile(path))
         self.getRowCount()
 
     def goBack(self):

@@ -141,7 +141,7 @@ class VideoPlayer(QWidget):
         print(self.myurl)
 
     def getYTUrl(self):
-        cmd = "youtube-dl -g -f best " + self.clip.text()
+        cmd = f"youtube-dl -g -f best {self.clip.text()}"
         print("grabbing YouTube URL")
         self.process.start(cmd)
 
@@ -163,8 +163,12 @@ class VideoPlayer(QWidget):
         proc.wait()
 
     def openFile(self):
-        fileName, _ = QFileDialog.getOpenFileName(self, "Open Movie",
-                QDir.homePath() + "/Videos", "Media (*.webm *.mp4 *.ts *.avi *.mpeg *.mpg *.mkv *.VOB *.m4v *.3gp *.mp3 *.m4a *.wav *.ogg *.flac *.m3u *.m3u8)")
+        fileName, _ = QFileDialog.getOpenFileName(
+            self,
+            "Open Movie",
+            f"{QDir.homePath()}/Videos",
+            "Media (*.webm *.mp4 *.ts *.avi *.mpeg *.mpg *.mkv *.VOB *.m4v *.3gp *.mp3 *.m4a *.wav *.ogg *.flac *.m3u *.m3u8)",
+        )
 
         if fileName != '':
             self.loadFilm(fileName)
@@ -324,11 +328,11 @@ class VideoPlayer(QWidget):
         
     def volumeUp(self):
         self.mediaPlayer.setVolume(self.mediaPlayer.volume() + 10)
-        print("Volume: " + str(self.mediaPlayer.volume()))
+        print(f"Volume: {str(self.mediaPlayer.volume())}")
     
     def volumeDown(self):
         self.mediaPlayer.setVolume(self.mediaPlayer.volume() - 10)
-        print("Volume: " + str(self.mediaPlayer.volume()))
+        print(f"Volume: {str(self.mediaPlayer.volume())}")
         
     def mouseMoveEvent(self, event):   
         if event.buttons() == Qt.LeftButton:
@@ -375,14 +379,13 @@ class VideoPlayer(QWidget):
         if self.mediaPlayer.mediaStatus() == 6:
             if self.mediaPlayer.isMetaDataAvailable():
                 res = str(self.mediaPlayer.metaData("Resolution")).partition("PyQt5.QtCore.QSize(")[2].replace(", ", " x ").replace(")", "")
-                print("%s%s" % ("Video Resolution = ",res))
+                print(f"Video Resolution = {res}")
             else:
                 print("no metaData available")
       
     def openFileAtStart(self, filelist):
-            matching = [s for s in filelist if ".myformat" in s]
-            if len(matching) > 0:
-                self.loadFilm(matching)
+        if matching := [s for s in filelist if ".myformat" in s]:
+            self.loadFilm(matching)
 
 ##################### update Label ##################################
     def handleLabel(self):

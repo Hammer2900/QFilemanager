@@ -42,20 +42,20 @@ class ImageViewer(QMainWindow):
         self.resize(w, h)
 
     def loadFile(self, fileName):
-        if self.filename:
-            self.myimage = QImage(self.filename)
-            if self.myimage.isNull():
-                QMessageBox.information(self, "Image Viewer",
-                        "Cannot load %s." % self.filename)
-                return
-            self.imageLabel.setPixmap(QPixmap.fromImage(self.myimage))
-            self.scaleFactor = int(self.myimage.width()) / int(self.myimage.height())
-            f = round(self.scaleFactor, 3)
-            if self.scaleFactor < 1:
-                self.resize(600 * self.scaleFactor, 600)
-            else:
-                self.resize(600, 600 / self.scaleFactor)
-            self.setWindowTitle(os.path.splitext(str(self.filename))[0].split("/")[-1])
+        if not self.filename:
+            return
+        self.myimage = QImage(self.filename)
+        if self.myimage.isNull():
+            QMessageBox.information(self, "Image Viewer", f"Cannot load {self.filename}.")
+            return
+        self.imageLabel.setPixmap(QPixmap.fromImage(self.myimage))
+        self.scaleFactor = int(self.myimage.width()) / int(self.myimage.height())
+        f = round(self.scaleFactor, 3)
+        if self.scaleFactor < 1:
+            self.resize(600 * self.scaleFactor, 600)
+        else:
+            self.resize(600, 600 / self.scaleFactor)
+        self.setWindowTitle(os.path.splitext(str(self.filename))[0].split("/")[-1])
 
 
 #if __name__ == '__main__':

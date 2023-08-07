@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 ###################################################################
 import sys
-import csv, codecs 
+import csv, codecs
 from PyQt5.QtCore import Qt, QDir, QFile, QFileInfo, QUrl, QStandardPaths
 from PyQt5.QtWidgets import (QMainWindow, QTableWidget, QTableWidgetItem, QCheckBox, 
                                                             QApplication, QAction, QMessageBox, QPushButton, 
@@ -12,7 +12,7 @@ from PyQt5.QtGui import QIcon, QDesktopServices
 myblue = "#fce94f"
 home = QStandardPaths.standardLocations(QStandardPaths.HomeLocation)[0]
 username = home.rpartition("/")[-1]
-media = "/media/" + username
+media = f"/media/{username}"
 
 music = QStandardPaths.standardLocations(QStandardPaths.MusicLocation)[0]
 videos = QStandardPaths.standardLocations(QStandardPaths.MoviesLocation)[0]
@@ -26,84 +26,84 @@ appdata = QStandardPaths.standardLocations(QStandardPaths.AppDataLocation)[0]
 
 class ListBox(QMainWindow):
     def __init__(self):
-      super(ListBox, self).__init__()
-      self.fileList = []
-      self.folderlist = []
-      self.allFolders = []
-      self.dir = QDir.homePath()
-      self.subdir = QDir.homePath()
-      self.setGeometry(0, 0, 800, 450)
-      self.setMinimumSize(500,300)
-      self.setContentsMargins(10, 10, 10, 0)
-      self.setWindowIcon(QIcon.fromTheme('kfind'))
-      self.setWindowTitle("Find Files")
+        super(ListBox, self).__init__()
+        self.fileList = []
+        self.folderlist = []
+        self.allFolders = []
+        self.dir = QDir.homePath()
+        self.subdir = QDir.homePath()
+        self.setGeometry(0, 0, 800, 450)
+        self.setMinimumSize(500,300)
+        self.setContentsMargins(10, 10, 10, 0)
+        self.setWindowIcon(QIcon.fromTheme('kfind'))
+        self.setWindowTitle("Find Files")
 ##toolbar######################################################
-      self.tb = self.addToolBar("Tools")
-      self.tb.setMovable(False)
-      self.tb.setContextMenuPolicy(Qt.PreventContextMenu)
-      self.findEdit = QLineEdit("*")
-      self.findAct = QAction(QIcon.fromTheme('edit-find'), "find", self,
-                                            statusTip="find Files",
-                                            triggered=self.findMyFiles)
-      self.findEdit.addAction(self.findAct, QLineEdit.LeadingPosition)
-      self.findEdit.setPlaceholderText("find")
-      self.findEdit.setToolTip("for example: *word*")
-      self.findEdit.setStatusTip("for example: *word*")
-      self.tb.addWidget(self.findEdit)
-      self.findEdit.returnPressed.connect(self.findMyFiles)
+        self.tb = self.addToolBar("Tools")
+        self.tb.setMovable(False)
+        self.tb.setContextMenuPolicy(Qt.PreventContextMenu)
+        self.findEdit = QLineEdit("*")
+        self.findAct = QAction(QIcon.fromTheme('edit-find'), "find", self,
+                                              statusTip="find Files",
+                                              triggered=self.findMyFiles)
+        self.findEdit.addAction(self.findAct, QLineEdit.LeadingPosition)
+        self.findEdit.setPlaceholderText("find")
+        self.findEdit.setToolTip("for example: *word*")
+        self.findEdit.setStatusTip("for example: *word*")
+        self.tb.addWidget(self.findEdit)
+        self.findEdit.returnPressed.connect(self.findMyFiles)
 
-      self.tb.addSeparator()
+        self.tb.addSeparator()
 
-      self.folderEdit = QLineEdit()
-      self.folderAct = QAction(QIcon.fromTheme('document-open'), "change Folder", self,
-                                        statusTip="change Folder",
-                                        triggered=self.changeFolder)
-      self.folderEdit.addAction(self.folderAct, QLineEdit.LeadingPosition)
-      self.folderEdit.setPlaceholderText("insert folder path")
-      self.folderEdit.setText(self.dir)
+        self.folderEdit = QLineEdit()
+        self.folderAct = QAction(QIcon.fromTheme('document-open'), "change Folder", self,
+                                          statusTip="change Folder",
+                                          triggered=self.changeFolder)
+        self.folderEdit.addAction(self.folderAct, QLineEdit.LeadingPosition)
+        self.folderEdit.setPlaceholderText("insert folder path")
+        self.folderEdit.setText(self.dir)
 #      self.folderEdit.textChanged.connect(self.setDir)
-      self.folderEdit.returnPressed.connect(self.findMyFiles)
-      self.tb.addWidget(self.folderEdit)
+        self.folderEdit.returnPressed.connect(self.findMyFiles)
+        self.tb.addWidget(self.folderEdit)
 
-      self.tb.addSeparator()
+        self.tb.addSeparator()
 
 #      self.addToolBarBreak()
-      self.noDot = QCheckBox("include hidden files")
+        self.noDot = QCheckBox("include hidden files")
 #      self.tb2 = self.addToolBar("hidden")
 #      self.tb2.addWidget(self.noDot)
 ##Listbox########################################################## 
-      self.lb = QTableWidget()
-      self.lb.setSelectionBehavior (QAbstractItemView.SelectRows)
-      self.lb.setColumnCount(2)
-      self.lb.setColumnWidth(0, 300)
+        self.lb = QTableWidget()
+        self.lb.setSelectionBehavior (QAbstractItemView.SelectRows)
+        self.lb.setColumnCount(2)
+        self.lb.setColumnWidth(0, 300)
 #      self.lb.setSelectionBehavior(self.lb.SelectRows)
-      self.lb.setSelectionMode(self.lb.SingleSelection)
-      self.lb.cellDoubleClicked.connect(self.doubleClicked)
-      self.lb.itemClicked.connect(self.getItem)
-      self.lb.setEditTriggers(QAbstractItemView.NoEditTriggers)
-      self.lb.horizontalHeader().setStretchLastSection(True)
-      self.lb.setAlternatingRowColors(True)
-      self.verticalHeader = QHeaderView(Qt.Vertical)
-      self.lb.setVerticalHeader(self.verticalHeader)
-      self.lb.horizontalHeader().setStretchLastSection(True)
-      self.lb.setHorizontalHeaderItem(0, QTableWidgetItem("Filename"))
-      self.lb.setHorizontalHeaderItem(1, QTableWidgetItem("Path"))
-      self.verticalHeader.setDefaultSectionSize(24)
-      self.lb.verticalHeader().hide()
-      self.lb.setToolTip("double click first column to open file\nsecond column to open file parent folder")
-      self.setCentralWidget(self.lb)
-      self.findEdit.setFocus()
-      self.statusBar().showMessage("Ready")
-      print("Welcome\nPython Version: " + sys.version[:5])
-      print("home is: " + home)
-      self.setStyleSheet(stylesheet(self))
+        self.lb.setSelectionMode(self.lb.SingleSelection)
+        self.lb.cellDoubleClicked.connect(self.doubleClicked)
+        self.lb.itemClicked.connect(self.getItem)
+        self.lb.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.lb.horizontalHeader().setStretchLastSection(True)
+        self.lb.setAlternatingRowColors(True)
+        self.verticalHeader = QHeaderView(Qt.Vertical)
+        self.lb.setVerticalHeader(self.verticalHeader)
+        self.lb.horizontalHeader().setStretchLastSection(True)
+        self.lb.setHorizontalHeaderItem(0, QTableWidgetItem("Filename"))
+        self.lb.setHorizontalHeaderItem(1, QTableWidgetItem("Path"))
+        self.verticalHeader.setDefaultSectionSize(24)
+        self.lb.verticalHeader().hide()
+        self.lb.setToolTip("double click first column to open file\nsecond column to open file parent folder")
+        self.setCentralWidget(self.lb)
+        self.findEdit.setFocus()
+        self.statusBar().showMessage("Ready")
+        print("Welcome\nPython Version: " + sys.version[:5])
+        print(f"home is: {home}")
+        self.setStyleSheet(stylesheet(self))
 
-      self.copyBtn = QPushButton("copy filepath")
-      self.copyBtn.clicked.connect(self.copyPath)
-      self.copyBtn.setFlat(True)
-      self.statusBar().addPermanentWidget(self.copyBtn)
+        self.copyBtn = QPushButton("copy filepath")
+        self.copyBtn.clicked.connect(self.copyPath)
+        self.copyBtn.setFlat(True)
+        self.statusBar().addPermanentWidget(self.copyBtn)
 
-      self.dir = self.folderEdit.text()
+        self.dir = self.folderEdit.text()
 #      self.show()
     ## def ####################################
 
@@ -115,7 +115,7 @@ class ListBox(QMainWindow):
     def removeDuplicates(self):
         for row in range(self.lb.rowCount()):
             if self.lb.item(row, 1) == self.lb.item(row + 1, 1):
-                print("removing Row", str(row))
+                print("removing Row", row)
                 self.lb.removeRow(row)
 
     def selectedRow(self):
@@ -134,14 +134,14 @@ class ListBox(QMainWindow):
         if column == 1:
             myfile = item.text()
         else:
-            myfile = self.lb.item(row, 1).text() + "/" + self.lb.item(row, 0).text() 
+            myfile = f"{self.lb.item(row, 1).text()}/{self.lb.item(row, 0).text()}"
         self.msg(myfile, 0)
 
     def copyPath(self):
         if self.lb.selectionModel().hasSelection():
             row = self.selectedRow()
             column = self.selectedColumn()
-            myfile = self.lb.item(row, 1).text() + "/" + self.lb.item(row, 0).text() 
+            myfile = f"{self.lb.item(row, 1).text()}/{self.lb.item(row, 0).text()}"
             clip = QApplication.clipboard()
             clip.setText(myfile)
             self.msg("filepath copied!", 0)
@@ -155,15 +155,15 @@ class ListBox(QMainWindow):
         if column == 1:
             myfile = item.text()
         else:
-            myfile = self.lb.item(row, 1).text() + "/" + self.lb.item(row, 0).text() 
+            myfile = f"{self.lb.item(row, 1).text()}/{self.lb.item(row, 0).text()}"
         if QFile.exists(myfile):
             print("file exists: ", myfile)
-            QDesktopServices.openUrl(QUrl("file://" + myfile))
+            QDesktopServices.openUrl(QUrl(f"file://{myfile}"))
 
     def setFolder(self):
         self.dir = ""
         self.folderEdit.setText(self.cmb.currentText())
-        if not self.findEdit.text() == "*":
+        if self.findEdit.text() != "*":
             self.setDir()
             self.findMyFiles()
         else:
@@ -179,15 +179,15 @@ class ListBox(QMainWindow):
         self.allFolders = []
         self.lb.clearContents()
         self.dir = self.folderEdit.text()
-        if not self.findEdit.text() == "*":
+        if self.findEdit.text() != "*":
             self.lb.setRowCount(0)
             self.findFiles(self.dir)
             self.findFolders(self.dir)
             self.findSufolders()
             self.getFiles()
             self.removeDuplicates()
-            if not self.lb.rowCount() == 0:
-                self.msg("found " + str(self.lb.rowCount()) + " Files", 0)
+            if self.lb.rowCount() != 0:
+                self.msg(f"found {str(self.lb.rowCount())} Files", 0)
             else:
                 self.msg("nothing found", 0)
         else:
@@ -203,7 +203,7 @@ class ListBox(QMainWindow):
         else:
             files = currentDir.entryList([fileName], QDir.AllDirs | QDir.NoDotAndDotDot)
         for line in files:
-            self.folderlist.append(path + "/" + line)
+            self.folderlist.append(f"{path}/{line}")
     
     def findSufolders(self):
         for folders in self.folderlist:   
@@ -215,13 +215,13 @@ class ListBox(QMainWindow):
         currentDir = QDir(path)
         files = currentDir.entryList([fileName], QDir.AllDirs | QDir.NoDotAndDotDot)
         for line in files:
-            self.allFolders.append(path + "/" + line)
-            self.findNewFolders(path + "/" + line)
+            self.allFolders.append(f"{path}/{line}")
+            self.findNewFolders(f"{path}/{line}")
     
     def findFiles(self, path):
         findName = self.findEdit.text()
         currentDir = QDir(path)
-        self.msg("searching in " + currentDir.path(), 0)
+        self.msg(f"searching in {currentDir.path()}", 0)
         files = currentDir.entryList([findName], QDir.AllEntries | QDir.System | QDir.Drives)
         for line in files:
             self.lb.insertRow(0)
@@ -233,8 +233,9 @@ class ListBox(QMainWindow):
             self.findFiles(mf)
 
     def changeFolder(self):
-        newfolder = QFileDialog.getExistingDirectory(self, "Find Files", self.dir)
-        if newfolder:
+        if newfolder := QFileDialog.getExistingDirectory(
+            self, "Find Files", self.dir
+        ):
             self.folderEdit.setText(newfolder)
 
     def closeEvent(self, event):

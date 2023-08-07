@@ -24,7 +24,7 @@ class PlaylistModel(QAbstractItemModel):
         return self.m_playlist.mediaCount() if self.m_playlist is not None and not parent.isValid() else 0
 
     def columnCount(self, parent=QModelIndex()):
-        return self.ColumnCount if not parent.isValid() else 0
+        return 0 if parent.isValid() else self.ColumnCount
 
     def index(self, row, column, parent=QModelIndex()):
         return self.createIndex(row, column) if self.m_playlist is not None and not parent.isValid() and row >= 0 and row < self.m_playlist.mediaCount() and column >= 0 and column < self.ColumnCount else QModelIndex()
@@ -370,9 +370,9 @@ class Player(QWidget):
 
     def metaDataChanged(self):
         if self.player.isMetaDataAvailable():
-            self.setTrackInfo("%s - %s" % (
-                    self.player.metaData(QMediaMetaData.AlbumArtist),
-                    self.player.metaData(QMediaMetaData.Title)))
+            self.setTrackInfo(
+                f"{self.player.metaData(QMediaMetaData.AlbumArtist)} - {self.player.metaData(QMediaMetaData.Title)}"
+            )
 
     def previousClicked(self):
         # Go to the previous track if we are within the first 5 seconds of
@@ -421,7 +421,7 @@ class Player(QWidget):
         self.trackInfo = info
 
         if self.statusInfo != "":
-             self.statusBar.showMessage("%s | %s" % (self.trackInfo, self.statusInfo))
+            self.statusBar.showMessage(f"{self.trackInfo} | {self.statusInfo}")
         else:
             self.statusBar.showMessage(self.trackInfo)
 
@@ -429,7 +429,7 @@ class Player(QWidget):
         self.statusInfo = info
 
         if self.statusInfo != "":
-            self.statusBar.showMessage("%s | %s" % (self.trackInfo, self.statusInfo))
+            self.statusBar.showMessage(f"{self.trackInfo} | {self.statusInfo}")
         else:
             self.statusBar.showMessage(self.trackInfo)
 
@@ -445,7 +445,7 @@ class Player(QWidget):
                     duration%60, (duration*1000)%1000);
 
             format = 'hh:mm:ss' if duration > 3600 else 'mm:ss'
-            tStr = currentTime.toString(format) + " / " + totalTime.toString(format)
+            tStr = f"{currentTime.toString(format)} / {totalTime.toString(format)}"
         else:
             tStr = ""
 

@@ -23,7 +23,7 @@ class DigitalClock(QLCDNumber):
         time = QTime.currentTime()
         text = time.toString('hh:mm:ss')
         if (time.second() % 2) == 0:
-            text = text[:2] + ' ' + text[3:5] + ' ' + text[6:]
+            text = f'{text[:2]} {text[3:5]} {text[6:]}'
         self.display(text)
 
 class MainWindow(QMainWindow):
@@ -80,58 +80,57 @@ class MainWindow(QMainWindow):
                 self.statusBar().showMessage("cancelled", 3000)
 
     def save(self):
-        if not self.myeditor.toPlainText() == "":
-            if self.myeditor.document().isModified():
-                if self.curFile:
-                    return self.saveFile(self.curFile)
-                    self.setCurrentFile(fileName)
-                else:
-                    return self.saveAs()
-            else:
-                self.statusBar().showMessage("File '" + self.curFile + "' already saved", 3000)
-        else:
+        if self.myeditor.toPlainText() == "":
             self.statusBar().showMessage("no Text")
 
+        elif self.myeditor.document().isModified():
+            return self.saveFile(self.curFile) if self.curFile else self.saveAs()
+        else:
+            self.statusBar().showMessage(f"File '{self.curFile}' already saved", 3000)
+
     def saveAs(self):
-        if not self.myeditor.toPlainText() == "":
+        if self.myeditor.toPlainText() != "":
             if self.curFile:
                 fileName, _ = QFileDialog.getSaveFileName(self, "Save as...", self.curFile, "Text Files (*.txt)")
             else:
                 documents = QStandardPaths.standardLocations(QStandardPaths.DocumentsLocation)[0]
-                fileName, _ = QFileDialog.getSaveFileName(self, "Save as...", documents + "/newDocument.txt", "Text Files (*.txt)" )
-            if fileName:
-                return self.saveFile(fileName)
-
-            return False
+                fileName, _ = QFileDialog.getSaveFileName(
+                    self,
+                    "Save as...",
+                    f"{documents}/newDocument.txt",
+                    "Text Files (*.txt)",
+                )
+            return self.saveFile(fileName) if fileName else False
         else:
             self.statusBar().showMessage("no Text")
 
     def contextMenuRequested(self, point):
         cmenu = QMenu()
         cmenu = self.myeditor.createStandardContextMenu()
-        if not self.myeditor.textCursor().selectedText() == "":
+        if self.myeditor.textCursor().selectedText() != "":
             cmenu.addSeparator()
             cmenu.addAction(QIcon.fromTheme("edit-find-and-replace"),"replace all occurrences", self.replaceThis)
         cmenu.exec_(self.myeditor.mapToGlobal(point))    
 
     def replaceThis(self):
-        if not self.myeditor.textCursor().selectedText() == "":
-            rtext = self.myeditor.textCursor().selectedText()
-            dlg = QInputDialog(self, Qt.Dialog)
-            dlg.setOkButtonText("Replace")
-            text = dlg.getText(self, "Replace","replace '" + rtext + "' with:", QLineEdit.Normal, "")
-            oldtext = self.myeditor.document().toPlainText()
-            if not (text[0] == ""):
-                newtext = oldtext.replace(rtext, text[0])
-                self.myeditor.setPlainText(newtext)
-                self.myeditor.document().setModified(True)
+        if self.myeditor.textCursor().selectedText() == "":
+            return
+        rtext = self.myeditor.textCursor().selectedText()
+        dlg = QInputDialog(self, Qt.Dialog)
+        dlg.setOkButtonText("Replace")
+        text = dlg.getText(
+            self, "Replace", f"replace '{rtext}' with:", QLineEdit.Normal, ""
+        )
+        oldtext = self.myeditor.document().toPlainText()
+        if text[0] != "":
+            newtext = oldtext.replace(rtext, text[0])
+            self.myeditor.setPlainText(newtext)
+            self.myeditor.document().setModified(True)
 
     def about(self):
-        link = "<p><a title='Axel Schneider' href='http://goodoldsongs.jimdo.com' target='_blank'>Axel Schneider</a></p>"
         title = "über QTextEdit"
-        message =  ("<span style='text-shadow: #2e3436 2px 2px 2px; color: #6169e1; font-size: 24pt;font-weight: bold;'><strong>QTextEdit 1.2</strong></span></p><br><br>created by<h2 >" + link + "</h2> with PyQt5" 
-                    "<br><br>Copyright © 2018 The Qt Company Ltd and other contributors." 
-                    "<br>Qt and the Qt logo are trademarks of The Qt Company Ltd.")
+        link = "<p><a title='Axel Schneider' href='http://goodoldsongs.jimdo.com' target='_blank'>Axel Schneider</a></p>"
+        message = f"<span style='text-shadow: #2e3436 2px 2px 2px; color: #6169e1; font-size: 24pt;font-weight: bold;'><strong>QTextEdit 1.2</strong></span></p><br><br>created by<h2 >{link}</h2> with PyQt5<br><br>Copyright © 2018 The Qt Company Ltd and other contributors.<br>Qt and the Qt logo are trademarks of The Qt Company Ltd."
         msg = QMessageBox(QMessageBox.Information, title, message, QMessageBox.NoButton, self, Qt.Dialog|Qt.NoDropShadowWindowHint).show()
 
     def documentWasModified(self):
@@ -191,7 +190,7 @@ class MainWindow(QMainWindow):
                 statusTip="über Qt",
                 triggered=QApplication.instance().aboutQt)
 
-        self.repAllAct = QPushButton("replace all") 
+        self.repAllAct = QPushButton("replace all")
         self.repAllAct.setFixedWidth(100)
         self.repAllAct.setIcon(QIcon.fromTheme("edit-find-and-replace"))
         self.repAllAct.setStatusTip("replace all")
@@ -213,7 +212,7 @@ class MainWindow(QMainWindow):
         self.printAct = QAction("print Document", self, shortcut=QKeySequence.Print,statusTip="print Document", triggered=self.handlePrint)
         self.printAct.setIcon(QIcon.fromTheme("document-print"))
 
-        for i in range(self.MaxRecentFiles):
+        for _ in range(self.MaxRecentFiles):
             self.recentFileActs.append(
                    QAction(self, visible=False,
                             triggered=self.openRecentFile))
@@ -221,7 +220,7 @@ class MainWindow(QMainWindow):
     def findText(self):
         word = self.findfield.text()
         if self.myeditor.find(word):
-            self.statusBar().showMessage("found '" + word + "'", 2000)
+            self.statusBar().showMessage(f"found '{word}'", 2000)
         else:
             self.myeditor.moveCursor(QTextCursor.Start)            
             if self.myeditor.find(word):
@@ -232,7 +231,7 @@ class MainWindow(QMainWindow):
     def replaceAll(self):
         oldtext = self.findfield.text()
         newtext = self.replacefield.text()
-        if not oldtext == "":
+        if oldtext != "":
             h = self.myeditor.toHtml().replace(oldtext, newtext)
             self.myeditor.setText(h)
             self.setModified(True)
@@ -243,7 +242,7 @@ class MainWindow(QMainWindow):
     def replaceOne(self):
         oldtext = self.findfield.text()
         newtext = self.replacefield.text()
-        if not oldtext == "":
+        if oldtext != "":
             h = self.myeditor.toHtml().replace(oldtext, newtext, 1)
             self.myeditor.setText(h)
             self.setModified(True)
@@ -252,8 +251,7 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage("nothing to replace", 3000)
 
     def openRecentFile(self):
-        action = self.sender()
-        if action:
+        if action := self.sender():
             if (self.maybeSave()):
                 self.loadFile(action.data())
 
@@ -381,7 +379,7 @@ class MainWindow(QMainWindow):
         QApplication.restoreOverrideCursor()
 
         self.setCurrentFile(fileName)
-        self.statusBar().showMessage("File '" +  fileName + "' loaded", 3000)
+        self.statusBar().showMessage(f"File '{fileName}' loaded", 3000)
 
     def saveFile(self, fileName):
         file = QFile(fileName)
@@ -396,7 +394,7 @@ class MainWindow(QMainWindow):
         QApplication.restoreOverrideCursor()
 
         self.setCurrentFile(fileName);
-        self.statusBar().showMessage("File '" +  fileName + "' saved", 3000)
+        self.statusBar().showMessage(f"File '{fileName}' saved", 3000)
         return True
 
     def setCurrentFile(self, fileName):
@@ -405,21 +403,21 @@ class MainWindow(QMainWindow):
         self.setWindowModified(False)
 
         if self.curFile:
-            self.setWindowTitle(self.strippedName(self.curFile) + "[*]")
+            self.setWindowTitle(f"{self.strippedName(self.curFile)}[*]")
         else:
             self.setWindowTitle('New.txt' + "[*]")
 
         files = self.settings.value('recentFileList', [])
-        if not files == "":
+        if files != "":
             try:
                 files.remove(fileName)
             except ValueError:
                 pass
-    
+
             if fileName:
                 files.insert(0, fileName)
                 del files[self.MaxRecentFiles:]
-    
+
                 self.settings.setValue('recentFileList', files)
                 self.updateRecentFileActions()
 
@@ -540,7 +538,7 @@ if __name__ == '__main__':
     mainWin.show()
     if len(sys.argv) > 1:
         print(sys.argv[1])
-        if not sys.argv[1] == "":
+        if sys.argv[1] != "":
             mainWin.myeditor.setPlainText(sys.argv[1])
             mainWin.myeditor.document().setModified()
     sys.exit(app.exec_())
